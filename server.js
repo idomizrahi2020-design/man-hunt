@@ -6,7 +6,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const PORT = process.env.PORT || 3000;
-const PUBLIC = path.join(__dirname, 'public');
+const PUBLIC = __dirname;
 const MAX_ONE_SEEKER = 8;          // above this many players there are two seekers
 const MAX_PLAYERS = 40;
 const TTL = 6 * 3600 * 1000;
