@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="he" dir="rtl"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#E4EAE7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1815" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Man Hunt">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Man Hunt</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&family=Karantina:wght@400;700&display=swap">
+<style>
+/* Layout: one narrow column, field-survey look. Contour lines on the ground, big condensed Hebrew display type, radar as the centerpiece. */
+:root{
+  --bg:#E4EAE7; --surface:#F2F6F4; --ink:#14221D; --ink-2:#4A5D56; --line:#C3CFCA; --contour:rgba(20,34,29,.07);
+  --seeker:#D13B26; --on-seeker:#FFFFFF; --hider:#177A68; --on-hider:#FFFFFF; --warn:#8F5B00;
+  --font-display:'Karantina','Arial Narrow',Impact,sans-serif;
+  --font-body:'Assistant','Segoe UI',Arial,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1815; --surface:#16251F; --ink:#E2EEE9; --ink-2:#93A8A0; --line:#2A3D35; --contour:rgba(226,238,233,.06);
+  --seeker:#FF6F58; --on-seeker:#1A0A07; --hider:#4CC9AE; --on-hider:#06201A; --warn:#E0A84A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1815; --surface:#16251F; --ink:#E2EEE9; --ink-2:#93A8A0; --line:#2A3D35; --contour:rgba(226,238,233,.06);
+  --seeker:#FF6F58; --on-seeker:#1A0A07; --hider:#4CC9AE; --on-hider:#06201A; --warn:#E0A84A; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{
+  background-color:var(--bg);
+  background-image:repeating-radial-gradient(circle at 92% -8%, transparent 0 26px, var(--contour) 26px 27px);
+  color:var(--ink); font-family:var(--font-body); font-size:16px; line-height:1.45; direction:rtl;
+  padding-block:20px 48px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+section{display:flex;flex-direction:column;gap:18px;min-width:0}
+
+.brand{font-family:var(--font-display);font-weight:700;font-size:92px;line-height:.82;letter-spacing:.01em;direction:ltr;text-align:right;margin:8px 0 0}
+.brand span{color:var(--seeker)}
+.tag{margin:0;color:var(--ink-2);font-size:17px;max-width:30ch;text-wrap:balance}
+h2{font-family:var(--font-display);font-weight:700;font-size:34px;line-height:1;margin:0;letter-spacing:.01em}
+.label{font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--ink-2);margin:0 0 6px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+input{font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:4px;padding:12px 14px;width:100%;min-width:0}
+input:focus-visible,button:focus-visible{outline:3px solid var(--hider);outline-offset:2px}
+#codeIn{font-family:var(--font-mono);letter-spacing:.25em;text-transform:uppercase;direction:ltr;text-align:center;font-size:20px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
+.row>*{flex:1 1 140px;min-width:0}
+
+.btn{font:inherit;font-weight:700;border:0;border-radius:4px;padding:13px 16px;cursor:pointer;background:var(--ink);color:var(--bg);min-height:48px}
+.btn.alt{background:transparent;color:var(--ink);border:1.5px solid var(--ink)}
+.btn.seek{background:var(--seeker);color:var(--on-seeker)}
+.btn.small{min-height:38px;padding:8px 12px;font-size:14px;flex:0 0 auto}
+.btn[disabled]{opacity:.4;cursor:default}
+.link{background:none;border:0;color:var(--ink-2);font:inherit;text-decoration:underline;cursor:pointer;padding:8px;align-self:center}
+
+.rules{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;color:var(--ink-2);font-size:15px}
+.rules li{display:flex;gap:10px}
+.rules b{font-family:var(--font-mono);color:var(--ink);font-weight:500;direction:ltr;flex:0 0 auto}
+
+.codebox{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.code{font-family:var(--font-mono);font-size:44px;font-weight:500;letter-spacing:.18em;direction:ltr;unicode-bidi:isolate;line-height:1}
+
+.plist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.plist li{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line);min-width:0}
+.plist li:first-child{border-top:0}
+.plist .nm{flex:1 1 auto;min-width:0;overflow-wrap:anywhere;font-weight:600}
+.chip{font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.chip.seek{border-color:var(--seeker);color:var(--seeker)}
+.chip.ok{border-color:var(--hider);color:var(--hider)}
+.meta{font-family:var(--font-mono);font-size:13px;color:var(--ink-2);direction:rtl;white-space:nowrap}
+
+.notice{border:1.5px solid var(--warn);color:var(--warn);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;font-size:15px}
+.notice p{margin:0}
+.notice .btn{background:var(--warn);color:var(--bg)}
+.sim{font-size:13px;color:var(--warn);font-weight:700}
+
+.banner{border-radius:6px;padding:18px 18px 16px;display:flex;flex-direction:column;gap:4px}
+.banner .big{font-family:var(--font-display);font-weight:700;font-size:64px;line-height:.85}
+.banner p{margin:0;font-size:16px}
+.banner.seeker{background:var(--seeker);color:var(--on-seeker)}
+.banner.hider{background:var(--hider);color:var(--on-hider)}
+.banner.out{background:var(--surface);border:1.5px dashed var(--ink-2);color:var(--ink)}
+
+.clock{display:flex;flex-direction:column;gap:8px}
+.clock .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.clock .t{font-family:var(--font-mono);font-size:30px;font-weight:500;direction:ltr}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;direction:ltr}
+.bar i{display:block;height:100%;width:0;background:var(--ink)}
+
+#radar{width:100%;max-width:440px;aspect-ratio:1;display:block;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:50%}
+.legend{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;font-size:13px;color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:6px;vertical-align:baseline}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom, 0px));background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:6px;max-width:min(440px,calc(100% - 32px));z-index:20;font-weight:600;text-align:center}
+.center{text-align:center;color:var(--ink-2)}
+@media (prefers-reduced-motion: no-preference){.banner{animation:rise .3s ease-out}@keyframes rise{from{opacity:.0;transform:translateY(6px)}to{opacity:1;transform:none}}}
+
+html{background:var(--bg)}
+body{padding-top:calc(20px + env(safe-area-inset-top,0px));padding-bottom:calc(48px + env(safe-area-inset-bottom,0px))}
+.stepper{display:flex;gap:10px;align-items:center}
+.stepper .btn{min-width:48px}
+.stepper .stepval{flex:1;text-align:center;font-family:var(--font-display);font-weight:700;font-size:44px;line-height:1}
+.netbar{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;background:var(--warn);color:var(--bg);text-align:center;padding:8px 16px;font-weight:700;font-size:14px;z-index:30}
+</style>
+</head><body>
+
+
+<div class="wrap" id="app" lang="he">
+
+  <section id="s-join">
+    <div>
+      <h1 class="brand">MAN<br><span>HUNT</span></h1>
+    </div>
+    <p class="tag">מחבואים אמיתיים עם החברים. מחפש אחד רודף, כולם האחרים מתחבאים.</p>
+    <div class="panel">
+      <div>
+        <p class="label">השם שלך</p>
+        <input id="nameIn" type="text" maxlength="16" autocomplete="nickname" placeholder="איך החברים קוראים לך">
+      </div>
+      <button class="btn" id="createBtn" type="button">צור משחק חדש</button>
+      <div>
+        <p class="label">או הצטרף עם קוד</p>
+        <div class="row">
+          <input id="codeIn" type="text" maxlength="4" placeholder="ABCD" autocapitalize="characters" autocomplete="off" spellcheck="false">
+          <button class="btn alt" id="joinBtn" type="button">הצטרף</button>
+        </div>
+      </div>
+      <p class="center" id="joinStatus" style="margin:0;font-size:14px">מתחבר…</p>
+      <button class="btn alt" id="installBtn" type="button" hidden>התקן כאפליקציה</button>
+      <p class="center" id="iosHint" style="margin:0;font-size:14px" hidden>באייפון: לחץ על כפתור השיתוף ואז על "הוסף למסך הבית".</p>
+    </div>
+    <ul class="rules">
+      <li><b>5:00</b><span>המיקום של כל שחקן מתעדכן אחת לחמש דקות. המחפשים רואים את המיקום האחרון שנשלח.</span></li>
+      <li><b>1+</b><span>המארח בוחר כמה מחפשים. באוטומטי יש מחפש אחד, ומתשעה שחקנים ומעלה שניים.</span></li>
+    </ul>
+  </section>
+
+  <section id="s-load" hidden>
+    <p class="center">נכנס ללובי…</p>
+  </section>
+
+  <section id="s-lobby" hidden>
+    <h2>לובי</h2>
+    <div class="panel">
+      <p class="label" style="margin:0">קוד המשחק</p>
+      <div class="codebox">
+        <div class="code" id="lobbyCode">----</div>
+        <button class="btn alt small" id="copyBtn" type="button">העתק</button>
+      </div>
+      <p style="margin:0;color:var(--ink-2);font-size:14px">שלחו לחברים את הקישור לדף הזה ואת הקוד.</p>
+    </div>
+    <div class="panel">
+      <div class="top row" style="justify-content:space-between;flex-wrap:nowrap">
+        <p class="label" style="margin:0" id="countLabel">שחקנים</p>
+        <span class="meta" id="seekLabel"></span>
+      </div>
+      <ul class="plist" id="lobbyList"></ul>
+    </div>
+    <div class="panel" id="seekerCfg" hidden>
+      <p class="label" style="margin:0">כמה מחפשים</p>
+      <div class="stepper">
+        <button class="btn alt small" id="seekMinus" type="button" aria-label="פחות מחפשים">−</button>
+        <div class="stepval" id="seekVal">1</div>
+        <button class="btn alt small" id="seekPlus" type="button" aria-label="יותר מחפשים">+</button>
+        <button class="btn alt small" id="seekAuto" type="button">אוטומטי</button>
+      </div>
+      <p style="margin:0;color:var(--ink-2);font-size:14px" id="seekHint"></p>
+    </div>
+    <div id="lobbyGps"></div>
+    <button class="btn seek" id="startBtn" type="button">התחל משחק</button>
+    <p class="center" id="waitHost" style="margin:0" hidden>ממתינים שהמארח יתחיל את המשחק</p>
+    <button class="link" id="leaveBtn1" type="button">יציאה מהמשחק</button>
+  </section>
+
+  <section id="s-game" hidden>
+    <div class="banner" id="banner"></div>
+    <div class="clock panel">
+      <div class="top"><span class="label" style="margin:0" id="clockLabel">עדכון מיקום הבא בעוד</span><span class="t" id="clockT">05:00</span></div>
+      <div class="bar"><i id="clockBar"></i></div>
+      <span class="meta" id="lastSent"></span>
+    </div>
+    <div id="gameGps"></div>
+    <div id="radarBox">
+      <canvas id="radar" aria-label="מכ״ם מיקומים אחרונים של המתחבאים"></canvas>
+      <div class="legend" style="margin-top:12px"><span><i style="background:var(--seeker)"></i>אתה</span><span><i style="background:var(--hider)"></i>מתחבא</span><span>הצפון למעלה</span></div>
+    </div>
+    <div class="panel">
+      <p class="label" style="margin:0" id="listLabel">שחקנים</p>
+      <ul class="plist" id="gameList"></ul>
+    </div>
+    <button class="btn alt" id="endBtn" type="button" hidden>סיים משחק</button>
+    <button class="link" id="leaveBtn2" type="button">יציאה מהמשחק</button>
+  </section>
+
+  <section id="s-end" hidden>
+    <div class="banner out"><div class="big" id="endTitle">המשחק הסתיים</div><p id="endSub"></p></div>
+    <div class="panel"><ul class="plist" id="endList"></ul></div>
+    <button class="btn" id="againBtn" type="button" hidden>חזרה ללובי</button>
+    <p class="center" id="againWait" hidden style="margin:0">ממתינים למארח</p>
+    <button class="link" id="leaveBtn3" type="button">יציאה מהמשחק</button>
+  </section>
+
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+<div class="netbar" id="net" role="status" hidden>החיבור לשרת נפסק. מנסה להתחבר שוב…</div>
+
+<script>
+(function(){
+  var LOC_MS = 300000;            // 5 minutes between location updates
+  var POLL_MS = 3000;
+  var API = (window.MANHUNT_API || '').replace(/\/$/, '');
+  var $ = function(id){return document.getElementById(id)};
+  var token=null, uid=null, code=null, myName='';
+  var lobby=null, players=[];
+  var gps='idle', demo=false, simPos=null;
+  var nextAt=0, busy=false, lastKey=null, starting=false, pollTimer=null, netFail=0, wake=null;
+
+  var store={
+    get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},
+    set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}},
+    del:function(k){try{localStorage.removeItem(k)}catch(e){}}
+  };
+  function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+  var toastT=null;
+  function toast(msg){var t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){t.hidden=true},4500)}
+
+  /* ---------- server ---------- */
+  async function api(method,url,body){
+    var r;
+    try{
+      r=await fetch(API+url,{method:method,headers:{'content-type':'application/json'},body:body?JSON.stringify(body):undefined});
+    }catch(e){var ne=new Error('אין חיבור לשרת. בדוק את האינטרנט.');ne.status=0;throw ne}
+    var j=null;try{j=await r.json()}catch(e){}
+    if(!r.ok){var er=new Error((j&&j.error)||'משהו השתבש');er.status=r.status;throw er}
+    return j;
+  }
+  function authBody(extra){var o={code:code,token:token};for(var k in extra)o[k]=extra[k];return o}
+  function schedule(ms){clearTimeout(pollTimer);if(code)pollTimer=setTimeout(poll,ms||(document.hidden?8000:POLL_MS))}
+  async function poll(){
+    if(!code)return;
+    var c=code;
+    try{
+      var s=await api('GET','/api/state?code='+encodeURIComponent(c)+'&token='+encodeURIComponent(token));
+      if(c!==code)return;
+      netFail=0;$('net').hidden=true;
+      lobby=s.lobby;players=s.players;uid=s.you;
+      onLobby();render();
+    }catch(e){
+      if(c!==code)return;
+      if(e.status===404||e.status===403){leave('המשחק נסגר או שהוסרת ממנו',true);return}
+      netFail++;if(netFail>=2)$('net').hidden=false;
+    }
+    schedule();
+  }
+
+  /* ---------- helpers ---------- */
+  function fmtDist(m){
+    if(m<1000)return Math.round(m/10)*10+' מ׳';
+    return (m/1000).toFixed(m<10000?1:0)+' ק״מ';
+  }
+  function dist(a,b){
+    var dx=(a.lng-b.lng)*Math.cos((a.lat+b.lat)/2*Math.PI/180)*111320, dy=(a.lat-b.lat)*110540;
+    return Math.sqrt(dx*dx+dy*dy);
+  }
+  function fmtAge(t){
+    if(!t)return 'עדיין בלי מיקום';
+    var m=Math.floor((Date.now()-t)/60000);
+    return m<1?'עודכן עכשיו':'לפני '+m+' דק׳';
+  }
+  function effSeekers(n){var s=lobby&&lobby.seekerSetting;return s?Math.max(1,Math.min(s,n-1)):(n>8?2:1)}
+  function seekerText(n){var k=effSeekers(n);return k===1?'מחפש אחד':k===2?'שני מחפשים':k+' מחפשים'}
+  function me(){for(var i=0;i<players.length;i++)if(players[i].id===uid)return players[i];return null}
+  function isSeeker(id){return !!(lobby&&lobby.seekers&&lobby.seekers.indexOf(id)>=0)}
+  function isHost(){return !!(lobby&&lobby.hostId===uid)}
+
+  /* ---------- location ---------- */
+  function getFix(){
+    return new Promise(function(res,rej){
+      if(demo){
+        if(!simPos){simPos={lat:32.0853+(Math.random()-.5)*.004,lng:34.7818+(Math.random()-.5)*.004}}
+        else{simPos={lat:simPos.lat+(Math.random()-.5)*.0024,lng:simPos.lng+(Math.random()-.5)*.0024}}
+        gps='sim';res({lat:simPos.lat,lng:simPos.lng,acc:15});return;
+      }
+      if(!navigator.geolocation){gps='denied';rej({code:1});return}
+      var done=false;
+      var guard=setTimeout(function(){if(!done){done=true;gps='error';rej({code:3})}},25000);
+      try{
+        navigator.geolocation.getCurrentPosition(function(p){
+          if(done)return;done=true;clearTimeout(guard);gps='ok';
+          res({lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy||0)});
+        },function(e){
+          if(done)return;done=true;clearTimeout(guard);
+          gps=(e&&e.code===1)?'denied':'error';rej(e||{code:2});
+        },{enableHighAccuracy:true,timeout:20000,maximumAge:0});
+      }catch(e){if(!done){done=true;clearTimeout(guard);gps='denied';rej({code:1})}}
+    });
+  }
+  async function sendLocation(){
+    if(busy||!code)return;
+    busy=true;render();
+    try{
+      var f=await getFix();
+      await api('POST','/api/loc',authBody({lat:f.lat,lng:f.lng,acc:f.acc}));
+      nextAt=Date.now()+LOC_MS;
+      poll();
+    }catch(e){
+      nextAt=Date.now()+(gps==='denied'?LOC_MS:60000);
+    }finally{busy=false;render()}
+  }
+
+  async function wakeOn(){
+    try{
+      if('wakeLock' in navigator&&!wake){
+        wake=await navigator.wakeLock.request('screen');
+        wake.addEventListener('release',function(){wake=null});
+      }
+    }catch(e){}
+  }
+  function wakeOff(){try{if(wake)wake.release()}catch(e){}wake=null}
+
+  /* ---------- lobby / game flow ---------- */
+  function enter(c,tok,id){
+    code=c;token=tok;uid=id;lobby=null;players=[];lastKey=null;nextAt=0;netFail=0;
+    store.set('mh',JSON.stringify({code:c,token:tok,name:myName}));
+    render();poll();
+  }
+  function onLobby(){
+    var key=(lobby.round||0)+':'+lobby.status;
+    if(key!==lastKey){
+      lastKey=key;
+      if(lobby.status==='playing'){nextAt=0;wakeOn();sendLocation()}
+      else wakeOff();
+    }
+  }
+  function leave(msg,remote){
+    var c=code,t=token;
+    clearTimeout(pollTimer);
+    if(!remote&&c&&t)api('POST','/api/leave',{code:c,token:t}).catch(function(){});
+    code=null;token=null;lobby=null;players=[];nextAt=0;
+    store.del('mh');wakeOff();$('net').hidden=true;
+    if(msg)toast(msg);
+    render();
+  }
+  function readName(){
+    var n=$('nameIn').value.trim();
+    if(!n){toast('כתוב קודם את השם שלך');$('nameIn').focus();return null}
+    myName=n;store.set('mhName',n);return n;
+  }
+  async function createGame(){
+    if(!readName())return;
+    $('createBtn').disabled=true;
+    try{var r=await api('POST','/api/create',{name:myName});enter(r.code,r.token,r.id)}
+    catch(e){toast(e.message)}
+    $('createBtn').disabled=false;
+  }
+  async function joinGame(){
+    if(!readName())return;
+    var c=$('codeIn').value.trim().toUpperCase();
+    if(c.length!==4){toast('הקוד הוא ארבעה תווים');$('codeIn').focus();return}
+    $('joinBtn').disabled=true;
+    try{var r=await api('POST','/api/join',{code:c,name:myName});enter(r.code,r.token,r.id)}
+    catch(e){toast(e.message)}
+    $('joinBtn').disabled=false;
+  }
+  async function act(url,extra){
+    try{await api('POST',url,authBody(extra));poll()}catch(e){toast(e.message)}
+  }
+  async function startGame(){
+    if(starting||!isHost()||players.length<2)return;
+    starting=true;$('startBtn').disabled=true;
+    await act('/api/start');
+    starting=false;
+  }
+
+  /* ---------- rendering ---------- */
+  function show(id){['s-join','s-load','s-lobby','s-game','s-end'].forEach(function(s){$(s).hidden=(s!==id)})}
+  function gpsNotice(box){
+    box.replaceChildren();
+    if(gps==='denied'){
+      var n=el('div','notice');
+      n.appendChild(el('p',null,'אין הרשאת מיקום. אפשר אותה בהגדרות הדפדפן או האפליקציה כדי שהמחפשים יראו אותך.'));
+      var b=el('button','btn',demo?'מצב הדגמה פעיל':'הפעל מצב הדגמה (מיקום מדומה)');
+      b.type='button';b.onclick=function(){demo=true;sendLocation()};
+      n.appendChild(b);box.appendChild(n);
+    }else if(gps==='error'){
+      var n2=el('div','notice');n2.appendChild(el('p',null,'לא הצלחנו לקבל מיקום. ננסה שוב בעוד דקה. כדאי לצאת למקום פתוח.'));box.appendChild(n2);
+    }else if(gps==='sim'){
+      box.appendChild(el('p','sim','מצב הדגמה: המיקומים מדומים ולא אמיתיים.'));
+    }
+  }
+  function render(){
+    if(!code){show('s-join');return}
+    if(!lobby){show('s-load');return}
+    if(lobby.status==='lobby')renderLobby();
+    else if(lobby.status==='playing')renderGame();
+    else renderEnd();
+  }
+  function addTags(li,p){
+    if(p.away)li.appendChild(el('span','chip','לא מחובר'));
+  }
+  function renderLobby(){
+    show('s-lobby');
+    $('lobbyCode').textContent=code;
+    $('countLabel').textContent='שחקנים · '+players.length;
+    $('seekLabel').textContent=seekerText(players.length);
+    var cfg=$('seekerCfg'),setting=lobby.seekerSetting||0,maxS=Math.max(1,players.length-1);
+    cfg.hidden=!isHost();
+    if(isHost()){
+      $('seekVal').textContent=effSeekers(players.length);
+      $('seekMinus').disabled=effSeekers(players.length)<=1;
+      $('seekPlus').disabled=effSeekers(players.length)>=maxS;
+      $('seekAuto').className='btn small '+(setting?'alt':'');
+      $('seekHint').textContent=setting?'נבחר ידנית. המחפשים יוגרלו מבין כל השחקנים.':'אוטומטי: מחפש אחד, ומתשעה שחקנים ומעלה שניים.';
+    }
+    var ul=$('lobbyList');ul.replaceChildren();
+    players.forEach(function(p){
+      var li=el('li');li.appendChild(el('span','nm',p.name||'שחקן'));
+      if(p.id===lobby.hostId)li.appendChild(el('span','chip','מארח'));
+      if(p.id===uid)li.appendChild(el('span','chip ok','אתה'));
+      addTags(li,p);
+      ul.appendChild(li);
+    });
+    var host=isHost();
+    $('startBtn').hidden=!host;
+    $('startBtn').disabled=players.length<2;
+    $('startBtn').textContent=players.length<2?'צריך לפחות שני שחקנים':'התחל משחק';
+    $('waitHost').hidden=host;
+  }
+  function renderGame(){
+    show('s-game');
+    var m=me(), seeker=isSeeker(uid), out=!!(m&&m.caught);
+    var b=$('banner');b.replaceChildren();
+    b.className='banner '+(out?'out':seeker?'seeker':'hider');
+    if(out){b.appendChild(el('div','big','נתפסת'));b.appendChild(el('p',null,'המשחק נמשך בלעדיך. אפשר לצפות ברשימה.'))}
+    else if(seeker){b.appendChild(el('div','big','אתה המחפש'));b.appendChild(el('p',null,'המכ״ם מציג את המקום האחרון שבו כל מתחבא דיווח.'))}
+    else{b.appendChild(el('div','big','אתה מתחבא'));b.appendChild(el('p',null,'המחפשים רואים את המיקום שלך רק אחת לחמש דקות. זוז בין העדכונים.'))}
+    $('clockLabel').textContent=out?'המיקום שלך לא נשלח יותר':(busy?'מעדכן מיקום…':'עדכון מיקום הבא בעוד');
+    $('lastSent').textContent=m&&m.t?'המיקום האחרון שלך: '+fmtAge(m.t):'המיקום שלך עוד לא נשלח';
+    gpsNotice($('gameGps'));
+    $('radarBox').hidden=!seeker;
+    var ul=$('gameList');ul.replaceChildren();
+    var hiders=players.filter(function(p){return !isSeeker(p.id)});
+    var seekers=players.filter(function(p){return isSeeker(p.id)});
+    $('listLabel').textContent=seeker?'מתחבאים · '+hiders.filter(function(p){return !p.caught}).length+' מתוך '+hiders.length+' עדיין חופשיים':'מי במשחק';
+    if(!seeker){
+      seekers.forEach(function(p){
+        var li=el('li');li.appendChild(el('span','nm',p.name||'שחקן'));li.appendChild(el('span','chip seek','מחפש'));ul.appendChild(li);
+      });
+    }
+    hiders.forEach(function(p){
+      var li=el('li');li.appendChild(el('span','nm',p.name||'שחקן'));
+      if(p.id===uid)li.appendChild(el('span','chip ok','אתה'));
+      addTags(li,p);
+      if(p.caught){li.appendChild(el('span','chip','נתפס'))}
+      else if(seeker){
+        var meta=fmtAge(p.t);
+        if(p.lat!=null&&m&&m.lat!=null)meta=fmtDist(dist(p,m))+' · '+meta;
+        li.appendChild(el('span','meta',meta));
+        var cb=el('button','btn seek small','נתפס');cb.type='button';cb.onclick=function(){act('/api/catch',{target:p.id})};li.appendChild(cb);
+      }
+      ul.appendChild(li);
+    });
+    $('endBtn').hidden=!isHost();
+    updateClock();drawRadar();
+  }
+  function renderEnd(){
+    show('s-end');
+    var hiders=players.filter(function(p){return !isSeeker(p.id)});
+    var free=hiders.filter(function(p){return !p.caught});
+    $('endTitle').textContent=free.length===0?'המחפשים ניצחו':'המתחבאים ניצחו';
+    $('endSub').textContent=free.length===0?'כל המתחבאים נתפסו.':free.length+' מתוך '+hiders.length+' מתחבאים לא נתפסו.';
+    var ul=$('endList');ul.replaceChildren();
+    players.forEach(function(p){
+      var li=el('li');li.appendChild(el('span','nm',p.name||'שחקן'));
+      if(isSeeker(p.id))li.appendChild(el('span','chip seek','מחפש'));
+      else li.appendChild(el('span','chip'+(p.caught?'':' ok'),p.caught?'נתפס':'לא נתפס'));
+      ul.appendChild(li);
+    });
+    $('againBtn').hidden=!isHost();$('againWait').hidden=isHost();
+  }
+  function updateClock(){
+    var out=(me()&&me().caught);
+    var remain=out?0:Math.max(0,nextAt-Date.now());
+    var s=Math.ceil(remain/1000), mm=String(Math.floor(s/60)).padStart(2,'0'), ss=String(s%60).padStart(2,'0');
+    $('clockT').textContent=out?'--:--':(nextAt?mm+':'+ss:'--:--');
+    $('clockBar').style.width=(out||!nextAt?0:Math.min(100,(1-remain/LOC_MS)*100))+'%';
+  }
+
+  /* ---------- radar ---------- */
+  function drawRadar(){
+    var cv=$('radar');
+    if(!lobby||$('s-game').hidden||$('radarBox').hidden)return;
+    var w=cv.clientWidth;if(!w)return;
+    var dpr=window.devicePixelRatio||1, px=Math.round(w*dpr);
+    if(cv.width!==px){cv.width=px;cv.height=px}
+    var c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,w);
+    var cs=getComputedStyle(document.documentElement);
+    var g=function(n){return cs.getPropertyValue(n).trim()};
+    var ink=g('--ink'),ink2=g('--ink-2'),line=g('--line'),seekC=g('--seeker'),hideC=g('--hider');
+    var body=g('--font-body')||'sans-serif', mono=g('--font-mono')||'monospace';
+    var m=me();
+    var hiders=players.filter(function(p){return !isSeeker(p.id)&&!p.caught&&p.lat!=null});
+    var mates=players.filter(function(p){return isSeeker(p.id)&&p.id!==uid&&p.lat!=null});
+    var origin=(m&&m.lat!=null)?m:(hiders[0]||null);
+    var cx=w/2,cy=w/2,R=w/2-30;
+    c.lineWidth=1;c.strokeStyle=line;
+    c.beginPath();c.moveTo(cx,cy-R);c.lineTo(cx,cy+R);c.moveTo(cx-R,cy);c.lineTo(cx+R,cy);c.stroke();
+    if(!origin){
+      [1/3,2/3,1].forEach(function(k){c.beginPath();c.arc(cx,cy,R*k,0,7);c.stroke()});
+      c.fillStyle=ink2;c.font='600 14px '+body;c.textAlign='center';c.direction='rtl';
+      c.fillText('ממתין לעדכון המיקום הראשון',cx,cy+5);return;
+    }
+    function proj(p){return{x:(p.lng-origin.lng)*Math.cos(origin.lat*Math.PI/180)*111320,y:-(p.lat-origin.lat)*110540}}
+    var pts=hiders.concat(mates).map(function(p){var q=proj(p);q.p=p;q.d=Math.sqrt(q.x*q.x+q.y*q.y);return q});
+    var maxd=pts.reduce(function(a,q){return Math.max(a,q.d)},0);
+    var scales=[100,250,500,1000,2000,5000,10000,25000,50000,100000];
+    var scale=scales.filter(function(s){return s>=maxd*1.2})[0]||maxd*1.2;
+    var k=R/scale;
+    [1/3,2/3,1].forEach(function(f){
+      c.strokeStyle=line;c.beginPath();c.arc(cx,cy,R*f,0,7);c.stroke();
+      c.fillStyle=ink2;c.font='11px '+mono;c.textAlign='left';c.direction='ltr';
+      c.fillText(fmtDist(scale*f),cx+R*f*.707+4,cy+R*f*.707+12);
+    });
+    c.fillStyle=ink2;c.font='600 12px '+body;c.textAlign='center';c.direction='rtl';c.fillText('צפון',cx,12);
+    pts.forEach(function(q){
+      var x=cx+q.x*k,y=cy+q.y*k,isMate=isSeeker(q.p.id);
+      var age=Date.now()-(q.p.t||Date.now()),a=Math.max(.35,1-age/(15*60000));
+      c.globalAlpha=isMate?1:a;
+      if(isMate){c.strokeStyle=seekC;c.lineWidth=2;c.beginPath();c.arc(x,y,7,0,7);c.stroke()}
+      else{c.fillStyle=hideC;c.beginPath();c.arc(x,y,7,0,7);c.fill()}
+      c.globalAlpha=1;c.lineWidth=1;
+      c.fillStyle=ink;c.font='600 13px '+body;c.direction='rtl';
+      var right=x>w*.62;c.textAlign=right?'right':'left';
+      c.fillText(q.p.name||'שחקן',x+(right?-12:12),y+4);
+    });
+    if(m&&m.lat!=null){
+      c.fillStyle=seekC;c.beginPath();c.arc(cx,cy,8,0,7);c.fill();
+      c.strokeStyle=seekC;c.lineWidth=2;c.beginPath();c.arc(cx,cy,14,0,7);c.stroke();c.lineWidth=1;
+    }
+  }
+
+  /* ---------- wiring ---------- */
+  $('createBtn').onclick=createGame;
+  $('joinBtn').onclick=joinGame;
+  $('codeIn').addEventListener('keydown',function(e){if(e.key==='Enter')joinGame()});
+  $('startBtn').onclick=startGame;
+  function setSeekers(n){act('/api/settings',{seekers:n})}
+  $('seekMinus').onclick=function(){setSeekers(Math.max(1,effSeekers(players.length)-1))};
+  $('seekPlus').onclick=function(){setSeekers(Math.min(Math.max(1,players.length-1),effSeekers(players.length)+1))};
+  $('seekAuto').onclick=function(){setSeekers(0)};
+  $('endBtn').onclick=function(){act('/api/end')};
+  $('againBtn').onclick=function(){act('/api/lobby')};
+  ['leaveBtn1','leaveBtn2','leaveBtn3'].forEach(function(id){$(id).onclick=function(){leave()}});
+  $('copyBtn').onclick=function(){
+    var done=function(){toast('הקוד הועתק')};
+    try{navigator.clipboard.writeText(code).then(done,function(){toast('העתק ידנית: '+code)})}catch(e){toast('העתק ידנית: '+code)}
+  };
+  setInterval(function(){
+    if(!code||!lobby||lobby.status!=='playing')return;
+    var m=me();
+    if(!(m&&m.caught)&&nextAt&&Date.now()>=nextAt)sendLocation();
+    updateClock();drawRadar();
+  },1000);
+  window.addEventListener('resize',drawRadar);
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden||!code)return;
+    poll();
+    if(lobby&&lobby.status==='playing')wakeOn();
+  });
+
+  /* install button */
+  var deferred=null;
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;$('installBtn').hidden=false});
+  $('installBtn').onclick=function(){
+    if(!deferred)return;
+    deferred.prompt();
+    deferred.userChoice.then(function(){deferred=null;$('installBtn').hidden=true},function(){});
+  };
+  var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  var standalone=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;
+  if(ios&&!standalone)$('iosHint').hidden=false;
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
+
+  /* start */
+  var sn=store.get('mhName');if(sn){$('nameIn').value=sn;myName=sn}
+  $('joinStatus').textContent='מוכן';
+  render();
+  (async function resume(){
+    var saved=null;try{saved=JSON.parse(store.get('mh')||'null')}catch(e){}
+    if(!saved||!saved.code||!saved.token)return;
+    try{
+      var s=await api('GET','/api/state?code='+encodeURIComponent(saved.code)+'&token='+encodeURIComponent(saved.token));
+      if(s.lobby.status!=='ended'){myName=saved.name||myName;enter(saved.code,saved.token,s.you)}
+      else store.del('mh');
+    }catch(e){if(e.status===404||e.status===403)store.del('mh')}
+  })();
+})();
+</script>
+</body>
+</html>
