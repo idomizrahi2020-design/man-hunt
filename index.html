@@ -139,7 +139,7 @@ body{padding-top:calc(20px + env(safe-area-inset-top,0px));padding-bottom:calc(4
       <p class="center" id="iosHint" style="margin:0;font-size:14px" hidden>באייפון: לחץ על כפתור השיתוף ואז על "הוסף למסך הבית".</p>
     </div>
     <ul class="rules">
-      <li><b>5:00</b><span>המיקום של כל שחקן מתעדכן אחת לחמש דקות. המחפשים רואים את המיקום האחרון שנשלח.</span></li>
+      <li><b>2:30</b><span>המיקום של כל שחקן מתעדכן אחת לשתיים וחצי דקות. המחפשים רואים את המיקום האחרון שנשלח.</span></li>
       <li><b>1+</b><span>המארח בוחר כמה מחפשים. באוטומטי יש מחפש אחד, ומתשעה שחקנים ומעלה שניים.</span></li>
     </ul>
   </section>
@@ -184,7 +184,7 @@ body{padding-top:calc(20px + env(safe-area-inset-top,0px));padding-bottom:calc(4
   <section id="s-game" hidden>
     <div class="banner" id="banner"></div>
     <div class="clock panel">
-      <div class="top"><span class="label" style="margin:0" id="clockLabel">עדכון מיקום הבא בעוד</span><span class="t" id="clockT">05:00</span></div>
+      <div class="top"><span class="label" style="margin:0" id="clockLabel">עדכון מיקום הבא בעוד</span><span class="t" id="clockT">02:30</span></div>
       <div class="bar"><i id="clockBar"></i></div>
       <span class="meta" id="lastSent"></span>
     </div>
@@ -215,7 +215,7 @@ body{padding-top:calc(20px + env(safe-area-inset-top,0px));padding-bottom:calc(4
 
 <script>
 (function(){
-  var LOC_MS = 300000;            // 5 minutes between location updates
+  var LOC_MS = 150000;            // 2.5 minutes between location updates
   var POLL_MS = 3000;
   var API = (window.MANHUNT_API || '').replace(/\/$/, '');
   var $ = function(id){return document.getElementById(id)};
@@ -442,7 +442,7 @@ body{padding-top:calc(20px + env(safe-area-inset-top,0px));padding-bottom:calc(4
     b.className='banner '+(out?'out':seeker?'seeker':'hider');
     if(out){b.appendChild(el('div','big','נתפסת'));b.appendChild(el('p',null,'המשחק נמשך בלעדיך. אפשר לצפות ברשימה.'))}
     else if(seeker){b.appendChild(el('div','big','אתה המחפש'));b.appendChild(el('p',null,'המכ״ם מציג את המקום האחרון שבו כל מתחבא דיווח.'))}
-    else{b.appendChild(el('div','big','אתה מתחבא'));b.appendChild(el('p',null,'המחפשים רואים את המיקום שלך רק אחת לחמש דקות. זוז בין העדכונים.'))}
+    else{b.appendChild(el('div','big','אתה מתחבא'));b.appendChild(el('p',null,'המחפשים רואים את המיקום שלך רק אחת לשתיים וחצי דקות. זוז בין העדכונים.'))}
     $('clockLabel').textContent=out?'המיקום שלך לא נשלח יותר':(busy?'מעדכן מיקום…':'עדכון מיקום הבא בעוד');
     $('lastSent').textContent=m&&m.t?'המיקום האחרון שלך: '+fmtAge(m.t):'המיקום שלך עוד לא נשלח';
     gpsNotice($('gameGps'));
